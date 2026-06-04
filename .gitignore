@@ -1,0 +1,23 @@
+# ===== Node (api-mock) =====
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# ===== Java / Gradle (automation) =====
+.gradle/
+build/
+target/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== Serenity =====
+**/site/serenity/
+
+# ===== IDE / SO =====
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===== Documento personal de la entrega (no publicar) =====
+Reto_Tecnico_QA_AccountX_Erick_Gutiérrez.pdf

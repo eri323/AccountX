@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+    id 'net.serenity-bdd.serenity-gradle-plugin' version '4.2.14'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    serenityVersion = '4.2.14'
+}
+
+java {
+    // Le decimos a Gradle que use Java 17 (el toolchain que instalamos).
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+// UTF-8 en compilacion: garantiza que los acentos de los steps en espanol
+// (codigo, envia, no vacio) coincidan con los .feature.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    // --- Nucleo de Serenity ---
+    testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+    // --- Integracion con Cucumber (BDD / Gherkin) ---
+    testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
+    // --- Patron Screenplay ---
+    testImplementation "net.serenity-bdd:serenity-screenplay:${serenityVersion}"
+    // --- Screenplay para REST (interacciones Post/Get sobre API) ---
+    testImplementation "net.serenity-bdd:serenity-screenplay-rest:${serenityVersion}"
+    // --- RestAssured integrado con los reportes de Serenity ---
+    testImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
+    // --- DSL de aserciones legibles (actor.should(seeThat(...))) ---
+    testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
+
+    // --- Plataforma de pruebas: JUnit 5 + suite para correr Cucumber ---
+    testImplementation "org.junit.platform:junit-platform-suite:1.11.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
+    // Motor que conecta Cucumber con la plataforma de JUnit 5 (lo usa el runner).
+    testImplementation "io.cucumber:cucumber-junit-platform-engine:7.20.1"
+
+    // --- Aserciones AssertJ (assertThat) y logging ---
+    testImplementation "org.assertj:assertj-core:3.26.3"
+    testImplementation "org.slf4j:slf4j-simple:2.0.16"
+
+    // --- Serializacion JSON de los POJOs/Map al hacer POST (RestAssured) ---
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:2.17.2"
+}
+
+test {
+    useJUnitPlatform()
+    // Permite filtrar escenarios por tags: -Dcucumber.filter.tags="@smoke"
+    systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags')
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = 'full'
+    }
+}
+
+// Que un fallo en un escenario no detenga el reporte completo de Serenity.
+gradle.startParameter.continueOnFailure = true
+
+// Al terminar los tests, genera el reporte HTML agregado de Serenity.
+test.finalizedBy(aggregate)

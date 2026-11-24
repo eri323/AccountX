@@ -11,27 +11,35 @@ import static net.serenitybdd.screenplay.Tasks.instrumented;
 
 /**
  * CAPA TASK (Screenplay).
- * Crea la oportunidad en el CRM (T6). Solo deberia ocurrir tras una aprobacion.
+ * Crea la oportunidad en el CRM (T6). El servidor decide si procede segun el
+ * pre-scoring que el mismo registro en T5.
+ *
+ * declarandoResultado(...) existe solo para la prueba de seguridad: manda un
+ * resultado falsificado en el body y verifica que el servidor lo ignore.
  */
 public class CrearOportunidad implements Task {
 
     private final String solicitudId;
-    private final String resultadoPrescoring;
+    private final String resultadoDeclarado;
 
-    public CrearOportunidad(String solicitudId, String resultadoPrescoring) {
+    public CrearOportunidad(String solicitudId, String resultadoDeclarado) {
         this.solicitudId = solicitudId;
-        this.resultadoPrescoring = resultadoPrescoring;
+        this.resultadoDeclarado = resultadoDeclarado;
     }
 
-    public static CrearOportunidad paraSolicitud(String solicitudId, String resultadoPrescoring) {
-        return instrumented(CrearOportunidad.class, solicitudId, resultadoPrescoring);
+    public static CrearOportunidad paraSolicitud(String solicitudId) {
+        return instrumented(CrearOportunidad.class, solicitudId, null);
+    }
+
+    public CrearOportunidad declarandoResultado(String resultado) {
+        return instrumented(CrearOportunidad.class, solicitudId, resultado);
     }
 
     @Override
     public <T extends Actor> void performAs(T actor) {
         Map<String, Object> body = new HashMap<>();
         body.put("solicitudId", solicitudId);
-        body.put("resultadoPrescoring", resultadoPrescoring);
+        if (resultadoDeclarado != null) body.put("resultadoPrescoring", resultadoDeclarado);
 
         actor.attemptsTo(
                 Post.to("/api/v1/crear-oportunidad")

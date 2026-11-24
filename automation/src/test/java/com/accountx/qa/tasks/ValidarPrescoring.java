@@ -28,7 +28,8 @@ public class ValidarPrescoring implements Task {
     @Override
     public <T extends Actor> void performAs(T actor) {
         Map<String, Object> body = new HashMap<>();
-        body.put("clienteId", clienteId);
+        // null se omite: permite probar el caso "sin clienteId".
+        if (clienteId != null) body.put("clienteId", clienteId);
 
         actor.attemptsTo(
                 Post.to("/api/v1/prescoring")

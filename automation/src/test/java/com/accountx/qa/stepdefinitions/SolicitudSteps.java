@@ -1,58 +1,40 @@
 package com.accountx.qa.stepdefinitions;
 
-import com.accountx.qa.questions.ElCodigoDeRespuesta;
-import com.accountx.qa.questions.ElSolicitudId;
 import com.accountx.qa.tasks.EnviarSolicitudPrincipal;
 import io.cucumber.java.es.Cuando;
-import io.cucumber.java.es.Dado;
-import io.cucumber.java.es.Entonces;
-import net.serenitybdd.screenplay.Actor;
-import net.serenitybdd.screenplay.rest.abilities.CallAnApi;
-import org.hamcrest.Matchers;
 
-import static net.serenitybdd.screenplay.GivenWhenThen.seeThat;
+import static com.accountx.qa.stepdefinitions.ComunSteps.CLIENTE_ID;
+import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 
 /**
- * CAPA STEP DEFINITIONS.
- * Es el PEGAMENTO entre el Gherkin y el codigo. Regla de oro: DELGADO.
- * No mete logica ni assertions complejas; solo orquesta al actor para que
- * ejecute Tasks y haga Questions. La logica vive en tasks/ y questions/.
+ * CAPA STEP DEFINITIONS - Solicitud principal (T3).
+ * El clienteId sale del paso "Dado el cliente ..." (memoria del actor), no de
+ * un valor fijo: lo que dice el Gherkin es lo que se envia.
  */
 public class SolicitudSteps {
 
-    private final String baseUrl = System.getProperty("restapi.baseUrl", "http://localhost:8080");
-    private final Actor cliente = Actor.named("Cliente bancario");
-
-    @Dado("un cliente con ID {string} autenticado")
-    public void unClienteConIdAutenticado(String clienteId) {
-        // Le damos al actor la HABILIDAD de llamar al API.
-        cliente.whoCan(CallAnApi.at(baseUrl));
-    }
-
     @Cuando("envia una solicitud con tipoTarjeta {string} e ingreso {int}")
-    public void enviaUnaSolicitudConTipoTarjetaEIngreso(String tipoTarjeta, Integer ingreso) {
-        cliente.attemptsTo(EnviarSolicitudPrincipal.con("1001", tipoTarjeta, ingreso));
+    public void enviaUnaSolicitud(String tipoTarjeta, Integer ingreso) {
+        enviar(tipoTarjeta, ingreso);
     }
 
-    @Cuando("envia una solicitud sin tipoTarjeta")
-    public void enviaUnaSolicitudSinTipoTarjeta() {
-        cliente.attemptsTo(EnviarSolicitudPrincipal.con("1001", null, 2500000));
+    @Cuando("envia una solicitud sin tipoTarjeta con ingreso {int}")
+    public void enviaUnaSolicitudSinTipoTarjeta(Integer ingreso) {
+        enviar(null, ingreso);
     }
 
-    @Cuando("envia una solicitud con ingreso {int}")
-    public void enviaUnaSolicitudConIngreso(Integer ingreso) {
-        cliente.attemptsTo(EnviarSolicitudPrincipal.con("1001", "T001", ingreso));
+    @Cuando("envia una solicitud con tipoTarjeta {string} sin ingreso")
+    public void enviaUnaSolicitudSinIngreso(String tipoTarjeta) {
+        enviar(tipoTarjeta, null);
     }
 
-    @Entonces("el servicio responde con codigo {int}")
-    public void elServicioRespondeConCodigo(Integer codigoEsperado) {
-        cliente.should(seeThat("El codigo de respuesta",
-                ElCodigoDeRespuesta.delUltimoResponse(), Matchers.equalTo(codigoEsperado)));
+    @Cuando("envia una solicitud sin clienteId con tipoTarjeta {string} e ingreso {int}")
+    public void enviaUnaSolicitudSinClienteId(String tipoTarjeta, Integer ingreso) {
+        theActorInTheSpotlight().attemptsTo(EnviarSolicitudPrincipal.con(null, tipoTarjeta, ingreso));
     }
 
-    @Entonces("la respuesta contiene un solicitudId no vacio")
-    public void laRespuestaContieneUnSolicitudIdNoVacio() {
-        cliente.should(seeThat("El solicitudId",
-                ElSolicitudId.delUltimoResponse(), Matchers.not(Matchers.emptyOrNullString())));
+    private void enviar(String tipoTarjeta, Integer ingreso) {
+        String clienteId = theActorInTheSpotlight().recall(CLIENTE_ID);
+        theActorInTheSpotlight().attemptsTo(EnviarSolicitudPrincipal.con(clienteId, tipoTarjeta, ingreso));
     }
 }

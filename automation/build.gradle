@@ -53,9 +53,23 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
-    // Permite filtrar escenarios por tags: -Dcucumber.filter.tags="@smoke"
-    systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags')
+    // Filtro por tags: ./gradlew test -Ptags="smoke"  o  -Ptags="T6 & negativo"
+    // Cucumber convierte cada @tag del .feature en un tag de JUnit (sin la @).
+    // Ojo: -Dcucumber.filter.tags NO sirve aqui: dentro del @Suite de JUnit 5,
+    // Cucumber lo ignora y corre todo (verificado con Cucumber 7.20).
+    useJUnitPlatform {
+        if (project.hasProperty('tags')) {
+            includeTags project.property('tags')
+        }
+    }
+    // Pasa a la JVM de los tests el ambiente y la URL del API cuando se dan por
+    // linea de comandos (-Denvironment=qa o -Drestapi.baseUrl=...). Sin esto,
+    // Gradle se queda con ellos y los tests siempre usan el valor de serenity.conf.
+    ['environment', 'restapi.baseUrl'].each { prop ->
+        if (System.getProperty(prop)) {
+            systemProperty prop, System.getProperty(prop)
+        }
+    }
     testLogging {
         showStandardStreams = true
         exceptionFormat = 'full'

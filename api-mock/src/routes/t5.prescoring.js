@@ -1,4 +1,5 @@
 const express = require('express');
+const { prescorings } = require('../store');
 const router = express.Router();
 
 // =============================================================
@@ -28,6 +29,9 @@ router.post('/prescoring', (req, res) => {
   }
 
   const resultado = resultados[clienteId] || 'RECHAZADO';
+
+  // Se registra para que T6 decida con el estado del servidor.
+  prescorings.set(String(clienteId), resultado);
 
   return res.status(200).json({ clienteId, resultado });
 });

@@ -43,6 +43,10 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
     // Motor que conecta Cucumber con la plataforma de JUnit 5 (lo usa el runner).
     testImplementation "io.cucumber:cucumber-junit-platform-engine:7.20.1"
+    // El reporter de Serenity para Cucumber (SerenityReporterParallel) carga
+    // clases de JUnit 4 (org.junit.runners.ParentRunner) aunque el runner sea
+    // JUnit 5. Sin esto, cada escenario cae con NoClassDefFoundError.
+    testImplementation "junit:junit:4.13.2"
 
     // --- Aserciones AssertJ (assertThat) y logging ---
     testImplementation "org.assertj:assertj-core:3.26.3"

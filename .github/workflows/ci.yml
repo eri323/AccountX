@@ -1,0 +1,85 @@
+name: CI
+
+# Corre la suite completa (28 escenarios T0-T6) contra la API mock en cada push y PR.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Expresión de tags de JUnit 5, sin la @ (ej. "smoke" o "T6 & negativo"). Vacío = todo'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-tests:
+    name: Pruebas de API (Serenity BDD + Screenplay)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # --- 1. API mock ---
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # Sin `npm ci`: package-lock.json está en .gitignore.
+      - name: Instalar dependencias del mock
+        working-directory: api-mock
+        run: npm install --no-audit --no-fund
+
+      - name: Levantar la API mock
+        working-directory: api-mock
+        run: |
+          nohup npm start > ../api-mock.log 2>&1 &
+          # Espera hasta 30 s a que /health responda antes de correr los tests.
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health > /dev/null; then
+              echo "API mock arriba"; exit 0
+            fi
+            sleep 1
+          done
+          echo "La API mock no respondió en 30 s"; cat ../api-mock.log; exit 1
+
+      # --- 2. Automatización ---
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Ejecutar escenarios
+        working-directory: automation
+        env:
+          TAGS: ${{ github.event.inputs.tags }}
+        run: |
+          if [ -n "$TAGS" ]; then
+            ./gradlew test --no-daemon -Drestapi.baseUrl=http://localhost:8080 -Ptags="$TAGS"
+          else
+            ./gradlew test --no-daemon -Drestapi.baseUrl=http://localhost:8080
+          fi
+
+      # --- 3. Evidencia ---
+      - name: Publicar reporte de Serenity
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: serenity-report
+          path: automation/target/site/serenity/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Log de la API mock
+        if: failure()
+        run: cat api-mock.log || true

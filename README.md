@@ -1,5 +1,7 @@
 # Account X — QA Automation Practice
 
+[![CI](https://github.com/eri323/AccountX/actions/workflows/ci.yml/badge.svg)](https://github.com/eri323/AccountX/actions/workflows/ci.yml)
+
 Proyecto de automatización de pruebas que replica el flujo de **solicitud de tarjetas de crédito** descrito en un reto técnico de QA (servicios T0–T6: catálogo, datos del cliente, solicitud principal/adicional, pre-scoring y creación de oportunidad).
 
 El objetivo es demostrar, con código ejecutable, cómo se diseña y automatiza un framework de pruebas de API moderno usando **Serenity BDD + el patrón Screenplay**, corriendo contra una **API mock local** que permite probar de forma determinista todas las ramas de negocio.
@@ -15,6 +17,7 @@ El objetivo es demostrar, con código ejecutable, cómo se diseña y automatiza 
 | Cliente HTTP | RestAssured (vía serenity-screenplay-rest) |
 | Build | Gradle (wrapper incluido) |
 | Reportes | Serenity HTML report |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) |
 
 ---
 
@@ -98,6 +101,18 @@ lo ignora y corre todo. Por eso se filtra con `-Ptags`.
 ### 3. Ver el reporte
 
 Abrir: `automation/target/site/serenity/index.html`
+
+### 4. Integración continua
+
+Cada push a `master` y cada PR corre la suite completa en GitHub Actions
+([`ci.yml`](.github/workflows/ci.yml)):
+
+1. Instala y levanta la API mock, y espera a que `/health` responda.
+2. Corre `./gradlew test` con Java 17 contra `http://localhost:8080`.
+3. Publica el reporte de Serenity como artefacto `serenity-report`, también cuando algo falla.
+
+Un escenario en rojo deja el job en rojo. Desde la pestaña **Actions** se puede lanzar a mano
+(*Run workflow*) con una expresión de tags, por ejemplo `smoke` o `T6 & negativo`.
 
 ---
 
